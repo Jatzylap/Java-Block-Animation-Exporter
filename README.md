@@ -5,5 +5,5 @@ A model exporter plugin for Blockbench based on the Java Block codec. This was d
 - Blockbench `v5.0.4`
 
 # Setup
-- Clone the Blockbench v5.0.4 source code
+- Clone the Blockbench `v5.0.4` source code
 - Replace the `java_block.js` file in `js\io\formats\java_block.js`
