@@ -85,41 +85,15 @@
 									node.rotation[1] += offset_rotation[1];
 									node.rotation[2] += offset_rotation[2];
 								}
-								if (node instanceof Group) {
+								if (node instanceof Group) { // Bone
 									node.origin.V3_add(offset_position);
 									node.children.forEach(child => {
 										offset(child, offset_rotation, offset_position, offset_scale, origin);
 									});
-								} else {
-									if (node.from) {
-										node.from.V3_add(offset_position);
-									}
-									if (node.to) {
-										node.to.V3_add(offset_position);
-									}
-									if (node.origin && node.origin !== node.from) {
-										node.origin.V3_add(offset_position);
-									}
-									let before_from = node.from;
-									let before_to = node.to;
-									let before_origin = node.origin;
-									origin.forEach(function(ogn, i) {
-										if (node.from) {
-											node.from[i] = (before_from[i] - node.inflate - ogn) * offset_scale[i];
-											node.from[i] = node.from[i] + node.inflate + ogn;
-										}
-										if (node.to) {
-											node.to[i] = (before_to[i] + node.inflate - ogn) * offset_scale[i];
-											node.to[i] = node.to[i] - node.inflate + ogn;
-											if (Format.integer_size) {
-												node.to[i] = node.from[i] + Math.round(node.to[i] - node.from[i]);
-											}
-										}
-										if (node.origin) {
-											node.origin[i] = (before_origin[i] - ogn) * offset_scale[i];
-											node.origin[i] = node.origin[i] + ogn;
-										}
-									})
+								} else { // Cube
+									if (node.from) node.from.V3_add(offset_position);
+									if (node.to) node.to.V3_add(offset_position);
+									if (node.origin) node.origin.V3_set(origin);
 								}
 							}
 
@@ -130,41 +104,15 @@
 									node.rotation[1] -= offset_rotation[1];
 									node.rotation[2] -= offset_rotation[2];
 								}
-								if (node instanceof Group) {
+								if (node instanceof Group) { // Bone
 									node.origin.V3_subtract(offset_position);
 									node.children.forEach(child => {
 										undo_offset(child, offset_rotation, offset_position, offset_scale, origin);
 									});
-								} else {
-									if (node.from) {
-										node.from.V3_subtract(offset_position);
-									}
-									if (node.to) {
-										node.to.V3_subtract(offset_position);
-									}
-									if (node.origin && node.origin !== node.from) {
-										node.origin.V3_subtract(offset_position);
-									}
-									let before_from = node.from;
-									let before_to = node.to;
-									let before_origin = node.origin;
-									origin.forEach(function(ogn, i) {
-										if (node.from) {
-											node.from[i] = (before_from[i] - node.inflate - ogn) / offset_scale[i];
-											node.from[i] = node.from[i] + node.inflate + ogn;
-										}
-										if (node.to) {
-											node.to[i] = (before_to[i] + node.inflate - ogn) / offset_scale[i];
-											node.to[i] = node.to[i] - node.inflate + ogn;
-											if (Format.integer_size) {
-												node.to[i] = node.from[i] + Math.round(node.to[i] - node.from[i]);
-											}
-										}
-										if (node.origin) {
-											node.origin[i] = (before_origin[i] - ogn) / offset_scale[i];
-											node.origin[i] = node.origin[i] + ogn;
-										}
-									});
+								} else { // Cube
+									if (node.from) node.from.V3_subtract(offset_position);
+									if (node.to) node.to.V3_subtract(offset_position);
+									if (node.origin) node.origin.V3_set([8,0,8]);
 								}
 							}
 
