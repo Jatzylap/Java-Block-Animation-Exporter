@@ -59,7 +59,7 @@
 								let offset_scale = [1, 1, 1];
 								let origin = [0, 0, 0];
 								origin.V3_set(node.origin);
-
+								
 								Animator.animations.forEach(animation => {
 									if (animation.playing) {
 										let animator = animation.getBoneAnimator(node);
@@ -112,7 +112,7 @@
 								} else { // Cube
 									if (node.from) node.from.V3_subtract(offset_position);
 									if (node.to) node.to.V3_subtract(offset_position);
-									if (node.origin) node.origin.V3_set([8,0,8]);
+									if (node.origin) node.origin.V3_set(origin);
 								}
 							}
 
