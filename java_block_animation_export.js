@@ -86,7 +86,6 @@
 									node.rotation[2] += offset_rotation[2];
 								}
 								if (node instanceof Group) { // Bone
-									node.origin.V3_add(offset_position);
 									node.children.forEach(child => {
 										offset(child, offset_rotation, offset_position, offset_scale, origin);
 									});
@@ -105,7 +104,6 @@
 									node.rotation[2] -= offset_rotation[2];
 								}
 								if (node instanceof Group) { // Bone
-									node.origin.V3_subtract(offset_position);
 									node.children.forEach(child => {
 										undo_offset(child, offset_rotation, offset_position, offset_scale, origin);
 									});
