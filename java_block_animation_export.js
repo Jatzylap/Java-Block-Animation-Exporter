@@ -9,8 +9,8 @@
 		description: 'Exports a sequence of JSON models using the Java Block codec',
 		about: 'To export, right click an animation and click Export Java Block Animation.',
 		tags: ['Exporter'],
-		version: '0.1.0',
-		min_version: '4.0.0',
+		version: '1.0.0',
+		min_version: '5.0.0',
 		variant: 'both',
 		onload() {
 			
@@ -36,29 +36,27 @@
 							for (let frame = 0; frame <= length * fps; frame++) {
 								Timeline.setTime(frame / fps);
 								Animator.preview();
-
+								let elements = Outliner.elements;
+								Undo.initEdit({elements, outliner: true, groups: Group.all});
 								let animatable_elements = Outliner.elements.filter(el => el.constructor.animator);
-
+								
 								[...Group.all, ...animatable_elements].forEach(node => {
 									let {offset_rotation, offset_position, offset_scale, origin} = set_defaults(node);
 									offset(node, offset_rotation, offset_position, offset_scale, origin);
 								});
-
+								
 								let javablockmodel = Codecs.java_block.compile();
 								archive.file(`${frame}.json`, javablockmodel);
-
-								[...Group.all, ...animatable_elements].forEach(node => {
-									let {offset_rotation, offset_position, offset_scale, origin} = set_defaults(node);
-									undo_offset(node, offset_rotation, offset_position, offset_scale, origin);
-								});
+								
+								Undo.finishEdit(`Java Block Animation Exporter Cache`);
+								Undo.undo();
 							}
+
 
 							function set_defaults(node) {
 								let offset_rotation = [0, 0, 0];
 								let offset_position = [0, 0, 0];
 								let offset_scale = [1, 1, 1];
-								let origin = [0, 0, 0];
-								origin.V3_set(node.origin);
 								
 								Animator.animations.forEach(animation => {
 									if (animation.playing) {
@@ -66,51 +64,40 @@
 										let multiplier = animation.blend_weight ? Math.clamp(Animator.MolangParser.parse(animation.blend_weight), 0, Infinity) : 1;
 										
 										if (node instanceof Group) {
-											let rotation = animator.interpolate('rotation');
-											let position = animator.interpolate('position');
-											let scale = animator.interpolate('scale');
-											if (scale instanceof Array) offset_scale.V3_multiply(scale.map(v => v * multiplier));
-											if (rotation instanceof Array) offset_rotation.V3_add(rotation.map(v => v * multiplier));
-											if (position instanceof Array) offset_position.V3_add(position.map(v => v * multiplier));
+											if (animator.channels.rotation) {
+												let rotation = animator.interpolate('rotation');
+												if (rotation instanceof Array) offset_rotation.V3_add(rotation.map(v => v * multiplier));
+											}
+											if (animator.channels.position) {
+												let position = animator.interpolate('position');
+												if (position instanceof Array) offset_position.V3_add(position.map(v => v * multiplier));
+											}
+											if (animator.channels.scale) {
+												let scale = animator.interpolate('scale');
+												if (scale instanceof Array) offset_scale.V3_multiply(scale.map(v => v * multiplier));
+											}
 										}
 									}
 								});
-								return {offset_rotation, offset_position, offset_scale, origin};
+								return {offset_rotation, offset_position, offset_scale};
 							}
 
 							// Rotation, Position, Scale
-							function offset(node, offset_rotation, offset_position, offset_scale, origin) {
+							function offset(node, offset_rotation, offset_position, offset_scale) {
 								if (node.getTypeBehavior('rotatable')) {
 									node.rotation[0] += offset_rotation[0];
 									node.rotation[1] += offset_rotation[1];
 									node.rotation[2] += offset_rotation[2];
 								}
 								if (node instanceof Group) { // Bone
+									node.origin.V3_add(offset_position);
 									node.children.forEach(child => {
-										offset(child, offset_rotation, offset_position, offset_scale, origin);
+										offset(child, offset_rotation, offset_position, offset_scale);
 									});
 								} else { // Cube
 									if (node.from) node.from.V3_add(offset_position);
 									if (node.to) node.to.V3_add(offset_position);
-									if (node.origin) node.origin.V3_set(origin);
-								}
-							}
-
-							// Undo: Rotation, Position, Scale
-							function undo_offset(node, offset_rotation, offset_position, offset_scale, origin) {
-								if (node.getTypeBehavior('rotatable')) {
-									node.rotation[0] -= offset_rotation[0];
-									node.rotation[1] -= offset_rotation[1];
-									node.rotation[2] -= offset_rotation[2];
-								}
-								if (node instanceof Group) { // Bone
-									node.children.forEach(child => {
-										undo_offset(child, offset_rotation, offset_position, offset_scale, origin);
-									});
-								} else { // Cube
-									if (node.from) node.from.V3_subtract(offset_position);
-									if (node.to) node.to.V3_subtract(offset_position);
-									if (node.origin) node.origin.V3_set(origin);
+									if (node.origin && node.origin !== node.from) node.origin.V3_add(offset_position);
 								}
 							}
 
