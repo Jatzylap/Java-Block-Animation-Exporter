@@ -14,7 +14,7 @@
 		variant: 'both',
 		onload() {
 			
-			export_action = new Action('export_java_block_sequence', {
+			export_action = new Action('export_java_block_animation', {
 				name: 'Export Java Block Animation',
 				description: 'Export animation as Java Block models',
 				icon: 'icon-objects',
@@ -22,7 +22,7 @@
 				condition: () => Modes.animate && Animation.selected,
 				click() {
 					new Dialog({
-						id: 'export_java_block_sequence',
+						id: 'export_java_block_animation',
 						title: 'Export Java Block Animation',
 						form: {
 							length: {label: 'Length', type: 'number', value: Animation.selected.length, min: 0, max: 10000},
@@ -39,66 +39,138 @@
 								let elements = Outliner.elements;
 								Undo.initEdit({elements, outliner: true, groups: Group.all});
 								let animatable_elements = Outliner.elements.filter(el => el.constructor.animator);
-								
+
 								[...Group.all, ...animatable_elements].forEach(node => {
-									let {offset_rotation, offset_position, offset_scale, origin} = set_defaults(node);
-									offset(node, offset_rotation, offset_position, offset_scale, origin);
+									let offset_rotation = [0, 0, 0];
+									let offset_position = [0, 0, 0];
+									let offset_scale = [1, 1, 1];
+									Animator.animations.forEach(animation => {
+										if (animation.playing) {
+											let animator = animation.getBoneAnimator(node);
+											let multiplier = animation.blend_weight ? Math.clamp(Animator.MolangParser.parse(animation.blend_weight), 0, Infinity) : 1;
+											
+											if (node instanceof Group) {
+												if (animator.channels.rotation) {
+													let rotation = animator.interpolate('rotation');
+													if (rotation instanceof Array) offset_rotation.V3_add(rotation.map(v => v * multiplier));
+												}
+												if (animator.channels.position) {
+													let position = animator.interpolate('position');
+													if (position instanceof Array) offset_position.V3_add(position.map(v => v * multiplier));
+												}
+												if (animator.channels.scale) {
+													let scale = animator.interpolate('scale');
+													if (scale instanceof Array) offset_scale.V3_multiply(scale.map(v => v * multiplier));
+												}
+											}
+										}
+									});
+
+									// Rotation
+									if (node.getTypeBehavior('rotatable')) {
+										node.rotation[0] += offset_rotation[0];
+										node.rotation[1] += offset_rotation[1];
+										node.rotation[2] += offset_rotation[2];
+									}
+									
+									// Position
+									function offset(node) {
+										if (node instanceof Group) {
+											node.origin.V3_add(offset_position);
+											node.children.forEach(offset);
+										} else {	
+											if (node.from) node.from.V3_add(offset_position);
+											if (node.to) node.to.V3_add(offset_position);
+											if (node.origin && node.origin !== node.from) node.origin.V3_add(offset_position);
+										}
+									}
+
+									// Resolve mesh positions from bones
+									function resolve(node) {
+										var array = node.children.slice();
+										var index = node.getParentArray().indexOf(node)
+										let all_elements = [];
+										let all_groups = [node];
+										node.forEachChild(obj => {
+											if (obj instanceof Group == false) {
+												all_elements.push(obj);
+											} else {
+												all_groups.push(obj);
+											}
+										});
+
+										array.forEach((obj) => {
+											obj.addTo(node.parent, index)
+											
+											if ((obj instanceof Cube && Format.rotate_cubes) || (obj instanceof OutlinerElement && obj.getTypeBehavior('rotatable')) || (obj instanceof Group && Format.bone_rig)) {
+												let quat = new THREE.Quaternion().copy(obj.mesh.quaternion);
+												quat.premultiply(obj.mesh.parent.quaternion);
+												let e = new THREE.Euler().setFromQuaternion(quat, obj.mesh.rotation.order);
+												obj.extend({
+													rotation: [
+														Math.roundTo(Math.radToDeg(e.x), 4),
+														Math.roundTo(Math.radToDeg(e.y), 4),
+														Math.roundTo(Math.radToDeg(e.z), 4),
+													]
+												});
+											}
+											if (obj.mesh) {
+												let pos = new THREE.Vector3().copy(obj.mesh.position);
+												pos.applyQuaternion(node.mesh.quaternion).sub(obj.mesh.position);
+												let diff = pos.toArray();
+
+												if (obj.from) obj.from.V3_add(diff);
+												if (obj.to) obj.to.V3_add(diff);
+												if (obj.getTypeBehavior('rotatable') || obj instanceof Group) obj.origin.V3_add(diff);
+
+												if (obj instanceof Group) {
+													obj.forEachChild(child => {
+														if (child instanceof Mesh) {
+															for (let vkey in child.vertices) {
+																child.vertices[vkey].V3_add(diff);
+															}
+														}
+														if (child instanceof Cube) child.from.V3_add(diff);
+														if (child.to) child.to.V3_add(diff);
+														if (child.origin) child.origin.V3_add(diff);
+														
+														// Scale
+														let before_from = child.from.V3_add(offset_position);
+														let before_to = child.to.V3_add(offset_position);
+														let before_origin = child.parent.origin;
+														let tmp_origin = child.origin;
+														tmp_origin.forEach(function(ogn, i) {
+															if (child.from) {
+																child.from[i] = (before_from[i] - child.inflate - ogn) * offset_scale[i];
+																child.from[i] = child.from[i] + child.inflate + ogn;
+															}
+															if (child.to) {
+																child.to[i] = (before_to[i] + child.inflate - ogn) * offset_scale[i];
+																child.to[i] = child.to[i] - child.inflate + ogn;
+																if (Format.integer_size) {
+																	child.to[i] = child.from[i] + Math.round(child.to[i] - child.from[i])
+																}
+															}
+															if (child.origin) {
+																child.origin[i] = (before_origin[i] - ogn) * offset_scale[i];
+																child.origin[i] = child.origin[i] + ogn;
+															}
+														});
+													});
+												}
+											}
+										});
+										Canvas.updateView({elements: array, element_aspects: {transform: true, geometry: false}});
+									}
+
+									offset(node);
+									resolve(node);
 								});
 								
 								let javablockmodel = Codecs.java_block.compile();
 								archive.file(`${frame}.json`, javablockmodel);
-								
 								Undo.finishEdit(`Java Block Animation Exporter Cache`);
 								Undo.undo();
-							}
-
-
-							function set_defaults(node) {
-								let offset_rotation = [0, 0, 0];
-								let offset_position = [0, 0, 0];
-								let offset_scale = [1, 1, 1];
-								
-								Animator.animations.forEach(animation => {
-									if (animation.playing) {
-										let animator = animation.getBoneAnimator(node);
-										let multiplier = animation.blend_weight ? Math.clamp(Animator.MolangParser.parse(animation.blend_weight), 0, Infinity) : 1;
-										
-										if (node instanceof Group) {
-											if (animator.channels.rotation) {
-												let rotation = animator.interpolate('rotation');
-												if (rotation instanceof Array) offset_rotation.V3_add(rotation.map(v => v * multiplier));
-											}
-											if (animator.channels.position) {
-												let position = animator.interpolate('position');
-												if (position instanceof Array) offset_position.V3_add(position.map(v => v * multiplier));
-											}
-											if (animator.channels.scale) {
-												let scale = animator.interpolate('scale');
-												if (scale instanceof Array) offset_scale.V3_multiply(scale.map(v => v * multiplier));
-											}
-										}
-									}
-								});
-								return {offset_rotation, offset_position, offset_scale};
-							}
-
-							// Rotation, Position, Scale
-							function offset(node, offset_rotation, offset_position, offset_scale) {
-								if (node.getTypeBehavior('rotatable')) {
-									node.rotation[0] += offset_rotation[0];
-									node.rotation[1] += offset_rotation[1];
-									node.rotation[2] += offset_rotation[2];
-								}
-								if (node instanceof Group) { // Bone
-									node.origin.V3_add(offset_position);
-									node.children.forEach(child => {
-										offset(child, offset_rotation, offset_position, offset_scale);
-									});
-								} else { // Cube
-									if (node.from) node.from.V3_add(offset_position);
-									if (node.to) node.to.V3_add(offset_position);
-									if (node.origin && node.origin !== node.from) node.origin.V3_add(offset_position);
-								}
 							}
 
 							archive.generateAsync({type: 'blob'}).then(content => {

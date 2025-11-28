@@ -724,7 +724,7 @@ Object.defineProperty(format, 'rotation_snap', {
 
 Object.defineProperty(format, 'rotation_limit', {
 	get() {
-		return Project.java_block_version != '1.22'
+		return Project.java_block_version != '1.21.11'
 	}
 })
 
