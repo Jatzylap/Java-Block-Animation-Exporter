@@ -73,7 +73,7 @@
 										node.rotation[2] += offset_rotation[2];
 									}
 									
-									// Position
+									// Position, Scale
 									function offset(node) {
 										if (node instanceof Group) {
 											node.origin.V3_add(offset_position);
@@ -82,6 +82,29 @@
 											if (node.from) node.from.V3_add(offset_position);
 											if (node.to) node.to.V3_add(offset_position);
 											if (node.origin && node.origin !== node.from) node.origin.V3_add(offset_position);
+
+											// Scale
+											let before_from = node.from.V3_add(offset_position);
+											let before_to = node.to.V3_add(offset_position);
+											let before_origin = node.parent.origin;
+											let tmp_origin = node.origin;
+											tmp_origin.forEach(function(ogn, i) {
+												if (node.from) {
+													node.from[i] = (before_from[i] - node.inflate - ogn) * offset_scale[i];
+													node.from[i] = node.from[i] + node.inflate + ogn;
+												}
+												if (node.to) {
+													node.to[i] = (before_to[i] + node.inflate - ogn) * offset_scale[i];
+													node.to[i] = node.to[i] - node.inflate + ogn;
+													if (Format.integer_size) {
+														node.to[i] = node.from[i] + Math.round(node.to[i] - node.from[i])
+													}
+												}
+												if (node.origin) {
+													node.origin[i] = (before_origin[i] - ogn) * offset_scale[i];
+													node.origin[i] = node.origin[i] + ogn;
+												}
+											});
 										}
 									}
 
@@ -134,28 +157,6 @@
 														if (child.to) child.to.V3_add(diff);
 														if (child.origin) child.origin.V3_add(diff);
 														
-														// Scale
-														let before_from = child.from.V3_add(offset_position);
-														let before_to = child.to.V3_add(offset_position);
-														let before_origin = child.parent.origin;
-														let tmp_origin = child.origin;
-														tmp_origin.forEach(function(ogn, i) {
-															if (child.from) {
-																child.from[i] = (before_from[i] - child.inflate - ogn) * offset_scale[i];
-																child.from[i] = child.from[i] + child.inflate + ogn;
-															}
-															if (child.to) {
-																child.to[i] = (before_to[i] + child.inflate - ogn) * offset_scale[i];
-																child.to[i] = child.to[i] - child.inflate + ogn;
-																if (Format.integer_size) {
-																	child.to[i] = child.from[i] + Math.round(child.to[i] - child.from[i])
-																}
-															}
-															if (child.origin) {
-																child.origin[i] = (before_origin[i] - ogn) * offset_scale[i];
-																child.origin[i] = child.origin[i] + ogn;
-															}
-														});
 													});
 												}
 											}
