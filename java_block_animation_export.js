@@ -84,11 +84,12 @@
 											if (node.origin && node.origin !== node.from) node.origin.V3_add(offset_position);
 
 											// Scale
-											let before_from = node.from.V3_add(offset_position);
-											let before_to = node.to.V3_add(offset_position);
-											let before_origin = node.parent.origin;
-											let tmp_origin = node.origin;
-											tmp_origin.forEach(function(ogn, i) {
+											let before_from = node.from;
+											let before_to = node.to;
+											let before_origin = node.origin;
+											let new_origin = node.parent.origin;
+
+											new_origin.forEach(function(ogn, i) {
 												if (node.from) {
 													node.from[i] = (before_from[i] - node.inflate - ogn) * offset_scale[i];
 													node.from[i] = node.from[i] + node.inflate + ogn;
@@ -161,7 +162,7 @@
 												}
 											}
 										});
-										Canvas.updateView({elements: array, element_aspects: {transform: true, geometry: false}});
+										Canvas.updateView({elements: array, element_aspects: {transform: true}});
 									}
 
 									offset(node);
