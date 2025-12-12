@@ -6,8 +6,8 @@ The Java Block Animation Exporter (JBAE) basically combines the Blockbench `Bake
 This will not export any item definition files for the exported models; these must be referenced manually.
 In a nutshell, the JBAE exports Java Block models similar to the OBJ Animation Exporter tool by JannisX11.
 
-# Prerequisites
-- Blockbench `5.0.5`
+# Pre-requisite:
+- Java Block format `1.21.11+` on blockbench
 
 # For local setup
 - Click **Load Plugin From File** in Blockbench at **File > Plugins**, select the `java_block_animation_export.js` plugin and then click **OK** when prompted.
