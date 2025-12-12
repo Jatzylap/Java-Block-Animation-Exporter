@@ -1,5 +1,5 @@
 # Java Block Animation Exporter
-A model exporter plugin for Blockbench based on the 1.21.11+ Java Block codec. This format was designed to make entity animations easier and more streamlined in Miencraft: Java Edition.
+A model exporter plugin for Blockbench based on the 1.21.11+ Java Block codec. This format is designed to make entity animations easier and more streamlined in Miencraft: Java Edition.
 
 # Functionality
 The Java Block Animation Exporter (JBAE) basically combines the Blockbench `Bake Animation Pose To Model` and `resolve` functions. To export your animation into a **Java Block Animation**, start by creating a new JBAE Project, then right-click your animation (created in the **Animate** tab) and click **Export Java Block Animation** from the drop-down menu. In a nutshell, the JBAE exports Java Block models similar to the OBJ Animation Exporter tool by JannisX11. 
