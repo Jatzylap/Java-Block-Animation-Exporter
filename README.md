@@ -1,16 +1,12 @@
-# Java Block Animation Exporter
-A model exporter plugin for Blockbench based on the 1.21.11+ Java Block codec. This format is designed to make entity animations easier and more streamlined in Minecraft: Java Edition. The plugin simply turns animation frames into a series item models. Requires Minecraft 1.21.11 or later.
+Adds the option to turn animation keyframes into a sequence of block/item models based on the Java Block codec.
+This will not export any item definition files for the exported models, so these must be referenced manually in a resource pack.
+Requires Minecraft 1.21.11 or later.
 
-# Functionality
-The Java Block Animation Exporter (JBAE) basically combines the Blockbench `Bake Animation Pose To Model` and `resolve` functions. To export your animation into a **Java Block Animation**, start by creating a new **Java Block Animation** project, then right-click your animation (created in the **Animate** tab) and click **Export Java Block Animation** from the drop-down menu. 
-This will not export any item definition files for the exported models; these must be referenced manually.
-In a nutshell, the JBAE exports Java Block models similar to the OBJ Animation Exporter tool by JannisX11.
+# How it works
+The Java Block Animation Exporter basically adds a format which combines the Blockbench `Bake Animation Pose To Model` and `resolve` functions into a single 'Export Java Block Animation' button. These models will be stored into a zip archive under the name of the selected animation.
 
-# Pre-requisite:
-- Java Block format `1.21.11+` on blockbench
-
-# For local setup
-- Click **Load Plugin From File** in Blockbench at **File > Plugins**, select the `java_block_animation_export.js` plugin and then click **OK** when prompted.
+## How to use
+Start by creating a new model or converting an existing cube-based project into a **Java Block Animation**. Create an animation. Right-click your animation. Click **Export Java Block Animation** from the drop-down menu. Each model will be displayed in-game based on settings in the Display tab.
 
 # Troubleshooting
 - If the exported models aren't getting rotated or positioned properly, make sure the groups/bones used in your animation have been checked (`Export: On`) in the `Edit` tab.
